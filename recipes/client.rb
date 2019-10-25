@@ -1,6 +1,6 @@
 #
 # Author:: Matt Ray <matt@@chef.io>
-# Cookbook Name:: chrony
+# Cookbook:: chrony
 # Recipe:: client
 # Copyright:: 2011-2018 Chef Software, Inc.
 #
@@ -17,11 +17,18 @@
 # limitations under the License.
 #
 
+chrony_service_name = value_for_platform_family(
+  %w(rhel fedora) => 'chronyd',
+  'default' => 'chrony'
+)
+
 package 'chrony'
 
 service 'chrony' do
+  service_name chrony_service_name
   supports restart: true, status: true, reload: true
-  action [ :enable ]
+  provider Chef::Provider::Service::Systemd
+  action %i(start enable)
 end
 
 # clients aren't servers by default
@@ -30,7 +37,9 @@ node.default['chrony']['allow'] = []
 # search for the chrony master(s), if found populate the template accordingly
 # typical deployment will only have 1 master, but still allow for multiple
 masters = search(:node, 'recipes:chrony\:\:master') || []
-if !masters.empty?
+if masters.empty?
+  Chef::Log.info("No chrony master(s) found, using node['chrony']['servers'] attribute.")
+else
   node.default['chrony']['servers'] = {}
   masters.each do |master|
     node.default['chrony']['servers'][master['ipaddress']] = master['chrony']['server_options']
@@ -38,14 +47,13 @@ if !masters.empty?
     # only use 1 server to sync initslewstep
     node.default['chrony']['initslewstep'] = "initslewstep 20 #{master['ipaddress']}"
   end
-else
-  Chef::Log.info('No chrony master(s) found, using node[:chrony][:servers] attribute.')
 end
 
-template '/etc/chrony/chrony.conf' do
+template 'chrony.conf' do
+  path platform_family?('rhel') ? '/etc/chrony.conf' : '/etc/chrony/chrony.conf'
+  source 'chrony_client.conf.erb'
   owner 'root'
   group 'root'
   mode '0644'
-  source 'chrony.conf.erb'
   notifies :restart, 'service[chrony]'
 end

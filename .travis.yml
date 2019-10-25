@@ -1,13 +1,39 @@
-services:
-  - docker
+addons:
+  apt:
+    sources:
+      - chef-current-xenial
+    packages:
+      - chef-workstation
 
-install:
-  - docker pull chef/chefdk
+install: echo "skip bundle install"
+
+env:
+  - CHEF_LICENSE=accept
 
 branches:
   only:
     - master
 
-script:
-  - docker run -t chef/chefdk chef -v
-  - docker run -v $PWD:/cookbook -w /cookbook -t chef/chefdk delivery local all
+services: docker
+
+env:
+  matrix:
+    - INSTANCE=client-ubuntu-1810
+    - INSTANCE=client-ubuntu-1904
+    - INSTANCE=client-centos-7
+    - INSTANCE=client-centos-8
+
+script: kitchen verify ${INSTANCE}
+
+matrix:
+  include:
+    - before_script:
+      - chef --version
+      - cookstyle --version
+      - foodcritic --version
+    - script:
+      - delivery local all
+      env:
+        - UNIT_AND_LINT=1
+        - CHEF_LICENSE=accept
+

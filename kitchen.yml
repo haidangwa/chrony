@@ -1,9 +1,12 @@
 ---
 driver:
   name: vagrant
+  chef_version: <%= ENV['CHEF_VERSION'] || 'current' %>
+  chef_license: accept-no-persist
 
 provisioner:
   name: chef_zero
+  deprecations_as_errors: true
   # You may wish to disable always updating cookbooks in CI or other testing environments.
   # For example:
   #   always_update_cookbooks: <%= !ENV['CI'] %>
@@ -13,14 +16,21 @@ verifier:
   name: inspec
 
 platforms:
-  - name: ubuntu-16.04
+  - name: ubuntu-18.10
+    driver:
+      intermediate_instructions:
+        - RUN /usr/bin/apt-get -y update
+  - name: ubuntu-19.04
+    driver:
+      intermediate_instructions:
+        - RUN /usr/bin/apt-get -y update
   - name: centos-7
+  - name: centos-8
 
 suites:
-  - name: default
+  - name: client
     run_list:
-      - recipe[chrony::default]
+      - recipe[chrony::client]
     verifier:
       inspec_tests:
-        - test/integration/default
-    attributes:
+        - test/integration/inspec/client_test.rb
