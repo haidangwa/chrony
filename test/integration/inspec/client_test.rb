@@ -9,7 +9,7 @@ end
 chrony_service = systemd? ? systemd_service('chronyd') : upstart_service('chrony')
 chrony_conf_file = os.redhat? ? '/etc/chrony.conf' : '/etc/chrony/chrony.conf'
 
-control 'chrony client service' do
+control 'chrony client' do
   title 'chrony client service'
   desc 'verify chrony daemon is installed and running'
   only_if { os.redhat? || os.debian? }
@@ -17,10 +17,6 @@ control 'chrony client service' do
   describe chrony_service do
     it { should be_installed }
     it { should be_enabled }
-    it do
-      skip if file('/proc/1/comm').content.strip == 'systemd'
-      should be_running
-    end
   end
 
   describe file(chrony_conf_file) do
