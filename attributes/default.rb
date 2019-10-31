@@ -20,7 +20,7 @@
 
 # hash of default servers in the chrony.conf from Ubuntu
 default['chrony']['servers'] = {
- 'pool.ntp.org' => 'iburst'
+ 'pool.ntp.org' => 'iburst',
 }
 
 default['chrony']['server_options'] = 'offline minpoll 8'
@@ -44,7 +44,7 @@ default['chrony']['systemd']['Unit'] = {
   'Documentation' => 'man:chronyd(8) man:chrony.conf(5)',
   'After' => 'ntpdate.service sntp.service ntpd.service',
   'Conflicts' => 'ntpd.service systemd-timesyncd.service',
-  'ConditionCapability' => 'CAP_SYS_TIME'
+  'ConditionCapability' => 'CAP_SYS_TIME',
 }
 
 # these are systemd settings that apply to all linux platforms
@@ -69,5 +69,5 @@ end
 
 default['chrony']['systemd']['Install'] = {
   'Alias' => 'chronyd.service',
-  'WantedBy' => 'multi-user.target'
+  'WantedBy' => 'multi-user.target',
 }
