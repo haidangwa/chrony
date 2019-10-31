@@ -1,8 +1,9 @@
 #
 # Author:: Matt Ray <matt@@chef.io>
+# Contributor:: Dang H. Nguyen <dang.nguyen@disney.com>
 # Cookbook:: chrony
 # Recipe:: client
-# Copyright:: 2011-2018 Chef Software, Inc.
+# Copyright:: 2011-2019 Chef Software, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,22 +18,24 @@
 # limitations under the License.
 #
 
-chrony_service_name = value_for_platform_family(
-  %w(rhel fedora) => 'chronyd',
-  'default' => 'chrony'
-)
-
 package 'chrony'
+
+systemd_unit "#{chrony_service_name}.service" do
+  action %i(create enable)
+  content node['chrony']['systemd']
+  verify false
+  only_if { systemd? }
+end
 
 service 'chrony' do
   service_name chrony_service_name
   supports restart: true, status: true, reload: true
-  provider Chef::Provider::Service::Systemd
+  if systemd?
+    start_command "systemctl --no-block start #{chrony_service_name}"
+    restart_command "systemctl --no-block restart #{chrony_service_name}"
+  end
   action %i(start enable)
 end
-
-# clients aren't servers by default
-node.default['chrony']['allow'] = []
 
 # search for the chrony master(s), if found populate the template accordingly
 # typical deployment will only have 1 master, but still allow for multiple
@@ -50,10 +53,13 @@ else
 end
 
 template 'chrony.conf' do
-  path platform_family?('rhel') ? '/etc/chrony.conf' : '/etc/chrony/chrony.conf'
+  path chrony_conf_file
   source 'chrony_client.conf.erb'
   owner 'root'
   group 'root'
   mode '0644'
+  variables driftfile: node['chrony']['driftfile'],
+            log_dir: node['chrony']['log_dir'],
+            servers: node['chrony']['servers']
   notifies :restart, 'service[chrony]'
 end

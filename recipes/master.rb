@@ -1,8 +1,9 @@
 #
 # Author:: Matt Ray <matt@@chef.io>
+# Contributor:: Dang H. Nguyen <dang.nguyen@disney.com>
 # Cookbook:: chrony
 # Recipe:: master
-# Copyright:: 2011-2018 Chef Software, Inc.
+# Copyright:: 2011-2019 Chef Software, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,17 +18,18 @@
 # limitations under the License.
 #
 
-chrony_service_name = value_for_platform_family(
-  %w(rhel fedora) => 'chronyd',
-  'default' => 'chrony'
-)
-
 package 'chrony'
+
+systemd_unit "#{chrony_service_name}.service" do
+  action %i(create enable)
+  content node['chrony']['systemd']
+  verify false
+  only_if { systemd? }
+end
 
 service 'chrony' do
   service_name chrony_service_name
   supports restart: true, status: true, reload: true
-  provider Chef::Provider::Service::Systemd
   action %i(start enable)
 end
 
@@ -53,11 +55,15 @@ else
   count.times { |x| node.default['chrony']['initslewstep'] += " #{keys[x]}" }
 end
 
-template '/etc/chrony/chrony.conf' do
-  path platform_family?('rhel') ? '/etc/chrony.conf' : '/etc/chrony/chrony.conf'
+template 'chrony.conf' do
+  path chrony_conf_file
   source 'chrony_master.conf.erb'
   owner 'root'
   group 'root'
   mode '0644'
+  variables allow: node['chrony']['allow'],
+            driftfile: node['chrony']['driftfile'],
+            log_dir: node['chrony']['log_dir'],
+            servers: node['chrony']['servers']
   notifies :restart, 'service[chrony]'
 end

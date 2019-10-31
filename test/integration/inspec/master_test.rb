@@ -28,6 +28,6 @@ control 'chrony client service' do
     its('owner') { should eq 'root' }
     its('group') { should eq 'root' }
     its('mode') { should cmp '0644' }
-    its('content') { should_not match(/^allow.*/) }
+    its('content') { should match(/^allow.*/) }
   end
 end
