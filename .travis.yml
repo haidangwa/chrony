@@ -7,9 +7,6 @@ addons:
 
 install: echo "skip bundle install"
 
-env:
-  - CHEF_LICENSE=accept
-
 branches:
   only:
     - master
@@ -18,12 +15,16 @@ services: docker
 
 env:
   matrix:
-    - INSTANCE=client-ubuntu-1810
-    - INSTANCE=client-ubuntu-1904
+    - INSTANCE=client-ubuntu-1804
+    - INSTANCE=client-ubuntu-1910
     - INSTANCE=client-centos-7
     - INSTANCE=client-centos-8
+    - INSTANCE=master-ubuntu-1804
+    - INSTANCE=master-ubuntu-1910
+    - INSTANCE=master-centos-7
+    - INSTANCE=master-centos-8
 
-script: kitchen verify ${INSTANCE}
+script: CHEF_LICENSE=accept KITCHEN_LOCAL_YAML=kitchen.dokken.yml kitchen verify ${INSTANCE}
 
 matrix:
   include:
@@ -35,5 +36,3 @@ matrix:
       - delivery local all
       env:
         - UNIT_AND_LINT=1
-        - CHEF_LICENSE=accept
-
