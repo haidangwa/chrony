@@ -20,7 +20,7 @@
 
 # this systemd? helper method might collide with Chef Infra Client >= 15.5
 # leaving here for older Chef Infra Clients
-unless respond_to?(:systmed?)
+unless respond_to?(:systemd?)
   def systemd?
     ::File.exist?('/proc/1/comm') && ::File.new('/proc/1/comm').gets.chomp == 'systemd'
   end
